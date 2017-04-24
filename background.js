@@ -14,7 +14,7 @@ function ffEscapeRegExp(str) {
 
 function ffActivateTag(tab) {
   if(tab.url) {
-    chrome.tabs.create({url: tab.url});
+    chrome.tabs.update({url: tab.url});
   }
   if(tab.tabId) {
     chrome.tabs.update(tab.tabId, {active: true});
@@ -73,7 +73,7 @@ function ffCalculateScoreWords(tab, words) {
   .map(function(word) { return ffRegexpExact(word); })
   .forEach(function(word, i) {
     if(hostname.match(word)) { score += 100; found_words[i] = true; }
-    if(tab.title.match(word)) { score += 100; found_words[i] = true; }
+    if(tab.title.match(word)) { score += 90; found_words[i] = true; }
     if(tab.url.match(word)) { score += 100; found_words[i] = true; }
   });
 
@@ -83,7 +83,7 @@ function ffCalculateScoreWords(tab, words) {
     if(found_words[i]) { return; }
     if(hostname.match(word)) { score += 20; found_words[i] = true; }
     if(tab.title.match(word)) { score += 20; found_words[i] = true; }
-    if(tab.url.match(word)) { score += 10; found_words[i] = true; }
+    if(tab.url.match(word)) { score += 30; found_words[i] = true; }
   });
 
   if(tab.visitCount) {
@@ -114,32 +114,32 @@ function ffRegexpFuzzy(word) {
 }
 
 function ffPrepareTab(tab, words) {
-  var content = tab.url + "#" + tab.windowId + "." + tab.id;
-  var desc = ffHighlightText(tab.title, words) + " <url>" +  ffHighlightText(ffGetHostname(tab.url), words) + "</url>";
+  var content = JSON.stringify({tabId: tab.id, windowId: tab.windowId});
+  var desc =  "🌐<url>" + ffHighlightText(tab.url, words) + "</url> 📄" + ffHighlightText(tab.title, words);
 
-  if(FF_DEBUGGING) {
-    desc = "score:" + tab.score + " - " + desc;
-  }
+  // if(FF_DEBUGGING) {
+  //   desc = "score:" + tab.score + " - " + desc;
+  // }
 
   if(tab.status && tab.status !== "complete") {
     desc = "[" + tab.status + "] " + desc;
   }
 
   if(tab.incognito) {
-    desc = "<url>[Incognito]</url> " + desc;
+    desc = "<url>[🔒]</url> " + desc;
   }
 
   if(tab.pinned) {
-    desc = "<url>[Pinned]</url> " + desc;
+    desc = "<url>[📌]</url> " + desc;
   }
 
   if(tab.audible) {
-    desc = "<url>[Audible]</url> " + desc;
+    desc = "<url>[🔊]</url> " + desc;
   }
 
   if(tab.lastVisitTime) {
-    content = tab.url + "#url";
-    desc = "<url>[History]</url> " + desc;
+    content = JSON.stringify({url: tab.url});
+    desc = "<url>[🕑]</url> " + desc;
   }
 
   return {content: content, description: desc};
@@ -204,18 +204,6 @@ function ffReorderTabs(tabs) {
       chrome.tabs.move(tab.id, {index: windows[tab.windowId].length - 1});
     }
   });
-}
-
-function ffParseSelected(text) {
-  var matchTab = text.match(/#(\d+)\.(\d+)$/);
-
-  if(matchTab) {
-    return {windowId: +matchTab[1], tabId: +matchTab[2]};
-  } else {
-    var matchUrl = text.match(/(.*)#url$/);
-    if(matchUrl) { return {url: matchUrl[1]}; }
-  }
-  return null;
 }
 
 function ffSearchFor(text) {
@@ -291,13 +279,14 @@ chrome.omnibox.onInputEntered.addListener(
         return;
       }
     } else {
-      selected = ffParseSelected(text);
-      if(!selected) {
+      try {
+        selected = JSON.parse(text);
+      } catch(e) {
         // User probably typed something but selected the first default option,
         // i.e., "Run ff command: query"
         ffSearchFor(text).then(function(suggestions) {
           if(suggestions.length === 0) { return; }
-          var selected = ffParseSelected(suggestions[0].content);
+          var selected = JSON.parse(suggestions[0].content);
           ffHistory.push(selected);
           ffActivateTag(selected);
         });
