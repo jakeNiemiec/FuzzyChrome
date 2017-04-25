@@ -113,7 +113,6 @@ function ffCalculateScoreWords(tab, words) {
   }
   
   if (found_words.filter(function (x) { return x; }).length !== words.length) { score = 0; }
-  if (score > 0 && tab.pinned) { score += 1000; }
   
   if (FF_DEBUGGING && score > 0) { console.debug('matching tab', tab.lastVisitTime && 'History' || 'Opened', 'id:' + tab.id, 'score:' + score, hostname, tab); }
   return score;
@@ -132,32 +131,32 @@ function ffRegexpFuzzy(word) {
 }
 
 function ffPrepareTab(tab, words) {
-  var content = tab.url + "#" + tab.windowId + "." + tab.id;
-  var desc = '🌐<url>' + ffHighlightText(tab.url, words) + '</url> 📄' + ffHighlightText(tab.title, words);
+  var content = tab.url + '#' + tab.windowId + '.' + tab.id;
+  var desc = ' 🌐<url>' + ffHighlightText(tab.url, words) + '</url> 📄' + ffHighlightText(tab.title, words);
   
-  // if(FF_DEBUGGING) {
-  //   desc = "score:" + tab.score + " - " + desc;
-  // }
+  if (tab.score || FF_DEBUGGING) {
+    desc = '<url>[' + (tab.score * 0.01).toFixed(1) + ']</url>' + desc;
+  }
   
   if (tab.status && tab.status !== 'complete') {
     desc = '[' + tab.status + '] ' + desc;
   }
   
   if (tab.incognito) {
-    desc = '<url>[🔒]</url> ' + desc;
+    desc = '<url>[🔒]</url>' + desc;
   }
   
   if (tab.pinned) {
-    desc = '<url>[📌]</url> ' + desc;
+    desc = '<url>[📌]</url>' + desc;
   }
   
   if (tab.audible) {
-    desc = '<url>[🔊]</url> ' + desc;
+    desc = '<url>[🔊]</url>' + desc;
   }
   
   if (tab.lastVisitTime) {
-    content = tab.url + "#url";
-    desc = '<url>[🕑]</url> ' + desc;
+    content = tab.url + '#url';
+    desc = '<url>[🕑]</url>' + desc;
   }
   
   return { content: content, description: desc };
@@ -259,7 +258,7 @@ function ffSearchFor(text) {
       if (FF_INCLUDE_HISTORY && matching_tabs.length < FF_MAX_SUGGESTIONS) {
         chrome.history.search({
                                 text: '',
-                                maxResults: 100,
+                                maxResults: 5000,
                                 startTime: new Date().getTime() - 30 * 24 * 3600 * 1000
                               }, function (array_of_history_items) {
           var matching_histories = ffFilter(array_of_history_items, words);
