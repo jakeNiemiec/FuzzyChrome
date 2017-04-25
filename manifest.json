@@ -2,15 +2,12 @@
   "manifest_version": 2,
 
   "name": "Fuzzy🔍",
-  "description": "Omnibox Fuzzy Finder for Chrome. Type 'f' in your address bar and search for your tabs.",
+  "description": "Omnibox Fuzzy Finder for Chrome. Type 'l' in your address bar and search for your tabs.",
   "version": "1.5",
-  "homepage_url": "https://github.com/siadat/chrome-ff",
+  "homepage_url": "https://github.com/jakeNiemiec/FuzzyChrome",
   "permissions": [ "tabs", "history" ],
   "background": {
     "scripts": ["background.js"]
   },
-  "omnibox": { "keyword" : "l" },
-  "icons": {
-    "16": "ff.png"
-  }
+  "omnibox": { "keyword" : "l" }
 }
